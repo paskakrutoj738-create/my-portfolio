@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Мои работы</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #1e293b;
+      --card-bg: #f8fafc;
+      --accent: #4f46e5;
+      --shadow: rgba(0,0,0,0.08);
+      --border: #e2e8f0;
+      --like-color: #ef4444;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --text: #f1f5f9;
+        --card-bg: #1e293b;
+        --border: #334155;
+        --shadow: rgba(0,0,0,0.3);
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      min-height: 100vh;
+      transition: background-color 0.4s ease, color 0.4s ease;
+    }
+
+    h1, h2 {
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 20px 0 30px;
+      font-size: 2.3rem;
+    }
+
+    .works-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 28px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .work-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 6px 20px var(--shadow);
+      opacity: 0;
+      transform: translateY(30px) scale(0.98);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                  box-shadow 0.3s ease;
+    }
+
+    .work-card.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .thumbnail {
+      width: 100%;
+      height: auto;
+      max-height: 260px;
+      object-fit: cover;
+      display: block;
+      cursor: pointer;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      aspect-ratio: 4 / 3;
+    }
+
+    .work-card:hover {
+      transform: translateY(-8px) scale(1.01);
+      box-shadow: 0 12px 30px var(--shadow);
+    }
+
+    .work-card:active .thumbnail {
+      transform: scale(0.98);
+    }
+
+    .work-title {
+      padding: 16px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .work-card.visible .work-title {
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: 0.15s;
+    }
+
+    /* Лайк */
+    .like-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255,255,255,0.9);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      transition: all 0.3s;
+    }
+
+    .like-btn.liked {
+      color: var(--like-color);
+      background: rgba(255,255,255,1);
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.94);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.4s ease, visibility 0.4s;
+    }
+
+    .modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content {
+      position: relative;
+      max-width: 90vw;
+      max-height: 85vh;
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 16px;
+    }
+
+    .close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      color: var(--text);
+      font-size: 28px;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    .modal-img {
+      max-width: 100%;
+      max-height: 60vh;
+      object-fit: contain;
+      border-radius: 12px;
+      display: block;
+      margin: 0 auto 20px;
+    }
+
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: none;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: background 0.3s;
+      z-index: 1001;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255,255,255,0.35);
+    }
+
+    .prev { left: 20px; }
+    .next { right: 20px; }
+
+    .modal-counter {
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    /* Форма обратной связи */
+    .contact-section {
+      max-width: 600px;
+      margin: 60px auto 40px;
+      padding: 30px;
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    .contact-section h2 {
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 1.8rem;
+      color: var(--text);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid(var(--border));
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    button#submitBtn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    button#submitBtn:hover {
+      background: #4338ca;
+      transform: translateY(-2px);
+    }
+
+    #formStatus {
+      margin-top: 16px;
+      text-align: center;
+      font-weight: 600;
+      min-height: 24px;
+    }
+
+    #formStatus.success {
+      color: #10b981;
+    }
+
+    #formStatus.error {
+      color: #ef4444;
+    }
+
+    /* Чекбоксы фидбэка */
+    .feedback-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .feedback-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      padding: 20px;
+      color: var(--text);
+      opacity: 0.8;
+      font-size: 0.95rem;
+    }
+
+    /* Команды бота */
+    .commands-section {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 25px;
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    .commands-section h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.8rem;
+    }
+
+    .commands-section ul {
+      margin-top: 15px;
+      padding-left: 20px;
+      line-height: 1.6;
+    }
+
+    .commands-section code {
+      background: rgba(0,0,0,0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+
+    .telegram-btn {
+      display: inline-block;
+      background: var(--accent);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+
+    .telegram-btn:hover {
+      background: #4338ca;
+    }
+
+    @media (max-width: 600px) {
+      .thumbnail { max-height: 200px; aspect-ratio: 3 / 4; }
+      .nav-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+      }
+      .prev { left: 10px; }
+      .next { right: 10px; }
+      .contact-section, .commands-section {
+        margin: 40px 15px;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Мои работы</h1>
+  <div class="works-grid" id="worksGrid"></div>
+
+  <!-- Модальное окно галереи -->
+  <div id="modal" class="modal">
+    <button class="close" id="closeModal">&times;</button>
+    <button class="nav-btn prev" id="prevBtn">‹</button>
+    <div class="modal-content">
+      <div class="modal-counter" id="modalCounter">1 / 1</div>
+      <img id="modalImg" class="modal-img" src="" alt="Просмотр">
+    </div>
+    <button class="nav-btn next" id="nextBtn">›</button>
+  </div>
+
+  <!-- Форма обратной связи -->
+  <section class="contact-section" id="contact">
+    <h2>Связаться со мной</h2>
+    <form id="contactForm">
+      <div class="form-group">
+        <input type="text" id="name" placeholder="Ваше имя *" required>
+      </div>
+      <div class="form-group">
+        <input type="email" id="email" placeholder="Ваш email (опционально)">
+      </div>
+      <div class="form-group">
+        <input type="text" id="telegram" placeholder="Ваш Telegram (например, @sl4yer_tt)">
+      </div>
+      
+      <div class="form-group">
+        <input 
+          type="tel" 
+          id="phone" 
+          placeholder="Номер телефона (только цифры, без +7)"
+          maxlength="10"
+        >
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="subject" placeholder="Тема сообщения (опционально)">
+      </div>
+      <div class="form-group">
+        <textarea id="message" placeholder="Ваше сообщение..." rows="5" required></textarea>
+      </div>
+      <button type="submit" id="submitBtn">Отправить в Telegram</button>
+      <div id="formStatus"></div>
+    </form>
+  </section>
+
+  <!-- Команды бота -->
+  <section class="commands-section">
+    <h2>Команды бота</h2>
+    <p>Напишите в Telegram боту <strong>@my_shopik_bot</strong>:</p>
+    <ul>
+      <li><code>/start</code> — начать общение</li>
+      <li><code>/help</code> — помощь и инструкции</li>
+      <li><code>/feedback</code> — оставить отзыв о работе</li>
+    </ul>
+    <div style="text-align:center; margin-top:25px;">
+      <a href="https://t.me/my_shopik_bot" class="telegram-btn" target="_blank">
+        Написать в Telegram
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    © 2026 Моё портфолио
+  </footer>
+
+  <script>
+    // === Настройки Telegram ===
+    const TELEGRAM_BOT_TOKEN = '8480629283:AAHxQRkT52Tn7uUoeZ-S_yi3-NHF5as5aIQ';
+    const TELEGRAM_CHAT_ID = '6162801591';
+
+    // Проверка Telegram-юзера
+    function isValidTelegram(username) {
+      return /^@[a-zA-Z0-9_]{5,32}$/.test(username);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // === Ваши папки ===
+      const workFolders = ['work1', 'work2', 'work3'];
+      const works = workFolders.map((folder, idx) => ({
+        id: idx,
+        title: `Моя работа номер ${idx + 1}`,
+        preview: `${folder}/preview.jpg`,
+        images: [
+          `${folder}/1.jpg`,
+          `${folder}/2.jpg`,
+          `${folder}/3.jpg`
+        ],
+        liked: false
+      }));
+
+      // --- Галерея ---
+      const grid = document.getElementById('worksGrid');
+      works.forEach((work) => {
+        const card = document.createElement('div');
+        card.className = 'work-card';
+        card.innerHTML = `
+          <img 
+            src="${work.preview}" 
+            alt="${work.title}"
+            class="thumbnail"
+            loading="lazy"
+            onerror="this.src='https://via.placeholder.com/400x300?text=Нет+превью'"
+          >
+          <div class="like-btn" data-id="${work.id}">♡</div>
+          <div class="work-title">${work.title}</div>
+        `;
+        card.addEventListener('click', () => openModal(work));
+        grid.appendChild(card);
+      });
+
+      // Анимация при скролле
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.work-card').forEach(card => observer.observe(card));
+
+      // Лайки
+      document.querySelectorAll('.like-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = parseInt(e.target.dataset.id);
+          const work = works.find(w => w.id === id);
+          work.liked = !work.liked;
+          e.target.textContent = work.liked ? '❤️' : '♡';
+          e.target.classList.toggle('liked', work.liked);
+          
+          if (work.liked) {
+            showFeedbackForm(work);
+          }
+        });
+      });
+
+      // --- Модальное окно галереи ---
+      const modal = document.getElementById('modal');
+      const modalImg = document.getElementById('modalImg');
+      const modalCounter = document.getElementById('modalCounter');
+      const closeModalBtn = document.getElementById('closeModal');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+
+      let currentWork = null;
+      let currentImageIndex = 0;
+
+      function openModal(work) {
+        currentWork = work;
+        currentImageIndex = 0;
+        updateModal();
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function updateModal() {
+        modalImg.src = currentWork.images[currentImageIndex];
+        modalCounter.textContent = `${currentImageIndex + 1} / ${currentWork.images.length}`;
+      }
+
+      function nextImage() {
+        currentImageIndex = (currentImageIndex + 1) % currentWork.images.length;
+        updateModal();
+      }
+
+      function prevImage() {
+        currentImageIndex = (currentImageIndex - 1 + currentWork.images.length) % currentWork.images.length;
+        updateModal();
+      }
+
+      function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+
+      closeModalBtn?.addEventListener('click', closeModal);
+      prevBtn?.addEventListener('click', prevImage);
+      nextBtn?.addEventListener('click', nextImage);
+      modal?.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (!modal.classList.contains('active')) return;
+        if (e.key === 'Escape') closeModal();
+        if (e.key === 'ArrowLeft') prevImage();
+        if (e.key === 'ArrowRight') nextImage();
+      });
+
+      // Свайп
+      let startX = 0;
+      modalImg?.addEventListener('touchstart', (e) => {
+        startX = e.changedTouches[0].screenX;
+      }, { passive: true });
+      modalImg?.addEventListener('touchend', (e) => {
+        const endX = e.changedTouches[0].screenX;
+        const diff = startX - endX;
+        if (Math.abs(diff) > 50) {
+          if (diff > 0) nextImage();
+          else prevImage();
+        }
+      }, { passive: true });
+
+      // --- Форма фидбэка после лайка ---
+      function showFeedbackForm(work) {
+        const feedbackModal = document.createElement('div');
+        feedbackModal.className = 'modal active';
+        feedbackModal.innerHTML = `
+          <div class="modal-content">
+            <button class="close">&times;</button>
+            <h2 style="text-align:center; margin-bottom:20px;">Спасибо за лайк! ❤️</h2>
+            <p style="margin-bottom:15px;"><strong>Работа:</strong> ${work.title}</p>
+            
+            <p style="margin-bottom:10px;">Что вам понравилось?</p>
+            <div class="feedback-options">
+              <label class="feedback-option"><input type="checkbox" value="Фото"> Фото</label>
+              <label class="feedback-option"><input type="checkbox" value="Дизайн"> Дизайн</label>
+              <label class="feedback-option"><input type="checkbox" value="Цвета"> Цвета</label>
+              <label class="feedback-option"><input type="checkbox" value="Идея"> Идея</label>
+            </div>
+
+            <div class="form-group" style="margin-top:20px;">
+              <textarea id="feedbackComment" placeholder="Ваш комментарий (опционально)..." rows="3"></textarea>
+            </div>
+
+            <button id="submitFeedback" style="width:100%; margin-top:20px; padding:12px; background:#4f46e5; color:white; border:none; border-radius:8px;">
+              Отправить в Telegram
+            </button>
+          </div>
+        `;
+        document.body.appendChild(feedbackModal);
+
+        feedbackModal.querySelector('.close').onclick = () => {
+          document.body.removeChild(feedbackModal);
+        };
+
+        feedbackModal.querySelector('#submitFeedback').onclick = async () => {
+          const checked = Array.from(feedbackModal.querySelectorAll('input:checked'))
+            .map(cb => cb.value);
+          const comment = feedbackModal.querySelector('#feedbackComment').value.trim() || '—';
+
+          const feedbackText = `
+❤️ НОВЫЙ ЛАЙК!
+
+Работа: ${work.title}
+Понравилось: ${checked.length > 0 ? checked.join(', ') : '—'}
+Комментарий: ${comment}
+          `.trim();
+
+          try {
+            const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: TELEGRAM_CHAT_ID,
+                text: feedbackText
+              })
+            });
+
+            if (response.ok) {
+              alert('Спасибо! Ваш отзыв отправлен автору ❤️');
+            } else {
+              alert('Ошибка отправки. Попробуйте позже.');
+            }
+          } catch (err) {
+            alert('Не удалось отправить. Проверьте интернет.');
+          }
+
+          document.body.removeChild(feedbackModal);
+        };
+      }
+
+      // --- Форма → Telegram (БЕЗ CAPTCHA) ---
+      document.getElementById('contactForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        let telegram = document.getElementById('telegram').value.trim();
+        let phoneRaw = document.getElementById('phone').value.trim();
+        const subject = document.getElementById('subject').value.trim();
+        const message = document.getElementById('message').value.trim();
+
+        // Валидация Telegram
+        if (telegram && !isValidTelegram(telegram)) {
+          document.getElementById('formStatus').className = 'error';
+          document.getElementById('formStatus').textContent = '❌ Неверный формат Telegram (должен начинаться с @ и содержать только латиницу, цифры, _)';
+          return;
+        }
+
+        // Форматирование телефона
+        let fullPhone = '—';
+        if (phoneRaw) {
+          const digits = phoneRaw.replace(/\D/g, '');
+          if (digits.length === 10) {
+            fullPhone = `+7${digits}`; // ← именно так: +79999999999
+          } else {
+            document.getElementById('formStatus').className = 'error';
+            document.getElementById('formStatus').textContent = '❌ Номер должен содержать 10 цифр';
+            return;
+          }
+        }
+
+        // Хотя бы email или telegram должны быть
+        if (!email && !telegram) {
+          document.getElementById('formStatus').className = 'error';
+          document.getElementById('formStatus').textContent = '❌ Укажите email или Telegram для ответа';
+          return;
+        }
+
+        const text = `
+📩 Новое сообщение из портфолио!
+
+👤 Имя: ${name}
+📧 Email: ${email || '—'}
+💬 Telegram: ${telegram || '—'}
+📱 Телефон: ${fullPhone}
+📌 Тема: ${subject || '—'}
+📝 Сообщение:
+${message}
+        `.trim();
+
+        const submitBtn = document.getElementById('submitBtn');
+        const statusDiv = document.getElementById('formStatus');
+        
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Отправка...';
+        statusDiv.className = '';
+        statusDiv.textContent = '';
+
+        try {
+          const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: TELEGRAM_CHAT_ID,
+              text: text
+            })
+          });
+
+          if (response.ok) {
+            statusDiv.className = 'success';
+            statusDiv.textContent = '✅ Отправлено в Telegram!';
+            document.getElementById('contactForm').reset();
+          } else {
+            throw new Error('Ошибка API');
+          }
+        } catch (err) {
+          statusDiv.className = 'error';
+          statusDiv.textContent = '❌ Не удалось отправить';
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Отправить в Telegram';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
